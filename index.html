@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auction Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React and ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // React components
+    const { useState, useEffect } = React;
+
+    // Types
+    /**
+     * @typedef {Object} Lot
+     * @property {string} date - Auction date
+     * @property {string} auctionHouse - Name of the auction house
+     * @property {string} lotNumber - Lot number
+     * @property {string} link - URL to the lot's detailed page
+     * @property {string} useClass - Use class (blank initially)
+     * @property {string} notesFeatures - Bullet-point details
+     * @property {string} postcode - UK postcode
+     * @property {string} guidePrice - Guide price (numeric, no currency symbol)
+     * @property {string} startingBidPrice - Starting bid price (blank initially)
+     * @property {string} finalBidPrice - Final bid price (blank initially)
+     * @property {string} soldPrice - Sold price (blank initially)
+     * @property {string} status - Status (blank initially)
+     * @property {string} incomePA - Income per annum (numeric, no currency symbol)
+     * @property {string} roStrikePrice - RO strike price (blank initially)
+     * @property {string} notes - Notes (blank initially)
+     * @property {string} numberOfBidders - Number of bidders (blank initially)
+     * @property {string} availableAtPrice - Available at price (blank initially)
+     */
+
+    /**
+     * @typedef {Object} Auction
+     * @property {string} id - Unique identifier
+     * @property {string} date - Auction date
+     * @property {string} auctionHouse - Name of the auction house
+     * @property {Lot[]} lots - Array of lots
+     */
+
+    // Sample data
+    const sampleAuctions = [
+      {
+        id: "1",
+        date: "22 September 2025",
+        auctionHouse: "Allsops",
+        lots: [
+          {
+            date: "22 September 2025",
+            auctionHouse: "Allsops",
+            lotNumber: "1",
+            link: "https://www.allsop.co.uk/lot/123456",
+            useClass: "",
+            notesFeatures: "Freehold three-storey mid-terrace building\nCurrently arranged as ground floor retail unit with two self-contained flats above\nRetail unit let at £12,000 per annum\nFlats both vacant\nTotal area approximately 1,800 sq ft",
+            postcode: "E1 6QL",
+            guidePrice: "450000",
+            startingBidPrice: "",
+            finalBidPrice: "",
+            soldPrice: "",
+            status: "",
+            incomePA: "12000",
+            roStrikePrice: "",
+            notes: "",
+            numberOfBidders: "",
+            availableAtPrice: ""
+          },
+          {
+            date: "22 September 2025",
+            auctionHouse: "Allsops",
+            lotNumber: "2",
+            link: "https://www.allsop.co.uk/lot/123457",
+            useClass: "",
+            notesFeatures: "Freehold detached building\nCurrently arranged as six self-contained flats\nFully let producing £72,000 per annum\nTotal area approximately 4,200 sq ft\nPotential for redevelopment (subject to planning)",
+            postcode: "NW10 7FH",
+            guidePrice: "950000",
+            startingBidPrice: "",
+            finalBidPrice: "",
+            soldPrice: "",
+            status: "",
+            incomePA: "72000",
+            roStrikePrice: "",
+            notes: "",
+            numberOfBidders: "",
+            availableAtPrice: ""
+          },
+          {
+            date: "22 September 2025",
+            auctionHouse: "Allsops",
+            lotNumber: "3",
+            link: "https://www.allsop.co.uk/lot/123458",
+            useClass: "",
+            notesFeatures: "Leasehold ground floor commercial unit\n999 year lease from 2010\nCurrently vacant\nPreviously used as a restaurant\nTotal area approximately 1,200 sq ft",
+            postcode: "W1F 8TQ",
+            guidePrice: "375000",
+            startingBidPrice: "",
+            finalBidPrice: "",
+            soldPrice: "",
+            status: "",
+            incomePA: "",
+            roStrikePrice: "",
+            notes: "",
+            numberOfBidders: "",
+            availableAtPrice: ""
+          }
+        ]
+      },
+      {
+        id: "2",
+        date: "25 September 2025",
+        auctionHouse: "Savills",
+        lots: [
+          {
+            date: "25 September 2025",
+            auctionHouse: "Savills",
+            lotNumber: "1",
+            link: "https://auctions.savills.co.uk/lot/987654",
+            useClass: "",
+            notesFeatures: "Freehold corner building\nGround floor retail with three floors of offices above\nLet to national retailer until 2030\nCurrent rent £45,000 per annum\nTotal area approximately 3,500 sq ft",
+            postcode: "EC2A 4BQ",
+            guidePrice: "850000",
+            startingBidPrice: "",
+            finalBidPrice: "",
+            soldPrice: "",
+            status: "",
+            incomePA: "45000",
+            roStrikePrice: "",
+            notes: "",
+            numberOfBidders: "",
+            availableAtPrice: ""
+          },
+          {
+            date: "25 September 2025",
+            auctionHouse: "Savills",
+            lotNumber: "2",
+            link: "https://auctions.savills.co.uk/lot/987655",
+            useClass: "",
+            notesFeatures: "Freehold development site\nPlanning permission for 8 residential units\nTotal site area approximately 0.5 acres\nPrime location close to transport links\nReady for immediate development",
+            postcode: "SW15 2JT",
+            guidePrice: "1200000",
+            startingBidPrice: "",
+            finalBidPrice: "",
+            soldPrice: "",
+            status: "",
+            incomePA: "",
+            roStrikePrice: "",
+            notes: "",
+            numberOfBidders: "",
+            availableAtPrice: ""
+          }
+        ]
+      },
+      {
+        id: "3",
+        date: "30 September 2025",
+        auctionHouse: "Strettons",
+        lots: [
+          {
+            date: "30 September 2025",
+            auctionHouse: "Strettons",
+            lotNumber: "1",
+            link: "https://www.strettons.co.uk/lot/567890",
+            useClass: "",
+            notesFeatures: "Freehold semi-detached house\nCurrently arranged as 5 bedsits\nFully let producing £36,000 per annum\nTotal area approximately 1,600 sq ft\nPotential to convert back to single dwelling",
+            postcode: "E17 9QR",
+            guidePrice: "550000",
+            startingBidPrice: "",
+            finalBidPrice: "",
+            soldPrice: "",
+            status: "",
+            incomePA: "36000",
+            roStrikePrice: "",
+            notes: "",
+            numberOfBidders: "",
+            availableAtPrice: ""
+          },
+          {
+            date: "30 September 2025",
+            auctionHouse: "Strettons",
+            lotNumber: "2",
+            link: "https://www.strettons.co.uk/lot/567891",
+            useClass: "",
+            notesFeatures: "Freehold commercial building\nCurrently arranged as ground floor retail with storage above\nLet to local business on 5-year lease from 2023\nCurrent rent £18,000 per annum\nTotal area approximately 1,200 sq ft",
+            postcode: "N1 6ND",
+            guidePrice: "320000",
+            startingBidPrice: "",
+            finalBidPrice: "",
+            soldPrice: "",
+            status: "",
+            incomePA: "18000",
+            roStrikePrice: "",
+            notes: "",
+            numberOfBidders: "",
+            availableAtPrice: ""
+          }
+        ]
+      }
+    ];
+
+    // Main App component
+    function App() {
+      const [isLoggedIn, setIsLoggedIn] = useState(false);
+      const [paid, setPaid] = useState(false);
+      const [email, setEmail] = useState("");
+      const [password, setPassword] = useState("");
+      const [auctions, setAuctions] = useState(sampleAuctions);
+      const [selected, setSelected] = useState(null);
+
+      // Function to handle login
+      const handleLogin = (e) => {
+        e.preventDefault();
+        if (email && password) {
+          setIsLoggedIn(true);
+        }
+      };
+
+      // Function to handle payment
+      const handlePayment = () => {
+        setPaid(true);
+      };
+
+      // Function to export auction data to Excel
+      const exportAuctionExcel = (auction) => {
+        // Create worksheet from auction lots
+        const worksheet = XLSX.utils.json_to_sheet(auction.lots.map(lot => ({
+          "Date": lot.date,
+          "Auction House": lot.auctionHouse,
+          "Lot Number": lot.lotNumber,
+          "Link": lot.link,
+          "UseClass": lot.useClass,
+          "Notes/Features": lot.notesFeatures,
+          "Postcode": lot.postcode,
+          "GuidePrice": lot.guidePrice,
+          "Starting Bid Price": lot.startingBidPrice,
+          "Final Bid Price": lot.finalBidPrice,
+          "Sold Price": lot.soldPrice,
+          "Status": lot.status,
+          "Income (p/a)": lot.incomePA,
+          "RO StrikePrice": lot.roStrikePrice,
+          "Notes": lot.notes,
+          "Number of Bidders": lot.numberOfBidders,
+          "Available At Price": lot.availableAtPrice
+        })));
+
+        // Create workbook and add the worksheet
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Auction Lots");
+
+        // Generate Excel file and trigger download
+        XLSX.writeFile(workbook, `${auction.auctionHouse}_${auction.date.replace(/\s/g, "_")}.xlsx`);
+      };
+
+      // Render login form if not logged in
+      if (!isLoggedIn) {
+        return (
+          <div className="container mx-auto px-4 py-8 max-w-md">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h1 className="text-2xl font-bold mb-6 text-center">Auction Dashboard Login</h1>
+              <form onSubmit={handleLogin}>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+                    Email
+                  </label>
+                  <input
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="email"
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="mb-6">
+                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+                    Password
+                  </label>
+                  <input
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="password"
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex items-center justify-center">
+                  <button
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+                    type="submit"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              </form>
+              <p className="text-center text-gray-500 text-xs mt-4">
+                For demo purposes, any email and password will work.
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      // Render payment form if not paid
+      if (!paid) {
+        return (
+          <div className="container mx-auto px-4 py-8 max-w-md">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h1 className="text-2xl font-bold mb-6 text-center">Subscribe to Auction Dashboard</h1>
+              <div className="mb-6">
+                <p className="text-gray-700 mb-4">
+                  Get access to auction data from Allsops, Savills, and Strettons.
+                </p>
+                <ul className="list-disc pl-5 mb-4 text-gray-700">
+                  <li>Weekly auction catalogue monitoring</li>
+                  <li>Consolidated Excel exports</li>
+                  <li>Auction day recording instructions</li>
+                  <li>Post-auction data analysis</li>
+                </ul>
+                <p className="font-bold text-lg text-center mb-4">£99.99 / month</p>
+              </div>
+              <div className="flex items-center justify-center">
+                <button
+                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+                  onClick={handlePayment}
+                >
+                  Subscribe Now
+                </button>
+              </div>
+              <p className="text-center text-gray-500 text-xs mt-4">
+                For demo purposes, clicking the button will simulate payment.
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      // Main dashboard
+      return (
+        <div className="container mx-auto px-4 py-6">
+          <header className="mb-6">
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-bold">Auction Dashboard</h1>
+              <div className="flex items-center gap-4">
+                <span className="text-green-600 font-medium">Subscription Active</span>
+                <span className="text-gray-600">{email}</span>
+                <button 
+                  className="bg-gray-200 px-3 py-1 rounded text-sm"
+                  onClick={() => setIsLoggedIn(false)}
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main className="grid grid-cols-4 gap-6">
+            <section className="col-span-3">
+              <h2 className="text-xl font-semibold mb-4">Upcoming Auctions</h2>
+              <div className="space-y-4">
+                {auctions.map(a => (
+                  <div key={a.id} className="bg-white p-4 rounded shadow flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium">{a.auctionHouse}</h3>
+                      <p className="text-gray-600">{a.date}</p>
+                      <p className="text-sm text-gray-500">{a.lots.length} lots</p>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button className="px-3 py-1 bg-white border rounded" onClick={() => setSelected(a)}>View</button>
+                      <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => exportAuctionExcel(a)} disabled={!paid}>Export Excel</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <aside className="col-span-1 border rounded p-4 bg-gray-50">
+              <h3 className="font-medium mb-2">Auction Day Checklist</h3>
+              <ol className="list-decimal list-inside text-sm space-y-2">
+                <li>Open auction link in browser and confirm livestream is playing.</li>
+                <li>Log in to Loom.com &rarr; New Video &rarr; Record a new video.</li>
+                <li>Select <strong>Chrome Tab</strong>, choose auction tab, share with audio, start recording.</li>
+                <li>Every 2 hours dismiss Loom keep-alive pop-up to avoid stopping.</li>
+                <li>After auction, review recording at 1.5–2x and fill final prices in the Excel file.</li>
+              </ol>
+
+              <div className="mt-4">
+                <h4 className="text-sm font-semibold">Post-auction steps</h4>
+                <ul className="text-sm list-disc ml-5 mt-2 space-y-1">
+                  <li>Open SharePoint → Rare Developments → ... → 003 Auction Data and update the auction file.</li>
+                  <li>Fill Final Bid Price, Sold Price, Status, Number of Bidders and Available At Price where applicable.</li>
+                  <li>Notify Papa when complete.</li>
+                </ul>
+              </div>
+            </aside>
+          </main>
+
+          {/* Modal for viewing auction lots */}
+          {selected && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6">
+              <div className="bg-white rounded shadow-lg w-full max-w-4xl max-h-[90vh] overflow-auto p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">{selected.auctionHouse} — {selected.date}</h2>
+                  <div className="flex gap-2">
+                    <button className="px-3 py-1 bg-gray-200 rounded" onClick={() => setSelected(null)}>Close</button>
+                    <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => exportAuctionExcel(selected)} disabled={!paid}>Export Excel</button>
+                  </div>
+                </div>
+
+                <table className="w-full table-auto text-sm border-collapse">
+                  <thead>
+                    <tr className="text-left bg-gray-100">
+                      <th className="p-2 border">Lot</th>
+                      <th className="p-2 border">Address / Notes</th>
+                      <th className="p-2 border">Postcode</th>
+                      <th className="p-2 border">Guide £</th>
+                      <th className="p-2 border">Income (p/a)</th>
+                      <th className="p-2 border">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selected.lots.map(l => (
+                      <tr key={l.lotNumber} className="odd:bg-white even:bg-gray-50">
+                        <td className="p-2 border align-top">{l.lotNumber}</td>
+                        <td className="p-2 border align-top">
+                          <div className="font-medium"><a target="_blank" rel="noreferrer" href={l.link} className="text-blue-600">Open lot</a></div>
+                          <div className="text-xs text-gray-700 mt-1 whitespace-pre-line">{l.notesFeatures}</div>
+                        </td>
+                        <td className="p-2 border align-top">{l.postcode}</td>
+                        <td className="p-2 border align-top">{l.guidePrice ? `£${Number(l.guidePrice).toLocaleString()}` : ''}</td>
+                        <td className="p-2 border align-top">{l.incomePA ? `£${Number(l.incomePA).toLocaleString()}` : ''}</td>
+                        <td className="p-2 border align-top">
+                          <button className="px-2 py-1 bg-yellow-200 rounded mr-2" onClick={() => { navigator.clipboard.writeText(JSON.stringify(l)); alert('Copied lot JSON to clipboard (for dev)')}}>Copy</button>
+                          <button className="px-2 py-1 bg-green-600 text-white rounded" onClick={() => { alert('Open manual entry form (not implemented in mock)') }}>Edit</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <footer className="text-xs text-gray-500 mt-6">
+            This is a front-end mock. To make this production-ready you will need:
+            <ul className="list-disc ml-5 mt-2">
+              <li>Backend that runs the scraper weekly, stores processed auction metadata, and serves the consolidated data via an API.</li>
+              <li>Stripe Checkout or PaymentIntents integration and secure user authentication (JWT / sessions).</li>
+              <li>Persistent storage (S3 or SharePoint) for saved catalogue HTML and exported Excel files.</li>
+              <li>Access controls so only paid users can download exports.</li>
+            </ul>
+          </footer>
+        </div>
+      );
+    }
+
+    // Render the App component to the DOM
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
